@@ -13,7 +13,7 @@ def get_episode_input(prompt, min_value, max_value):
                 return episode_no
             else:
                 print(f"Please enter a number between {min_value} and {max_value}.")
-        except ValueError:
+        except (ValueError,EOFError):
             print("Invalid input. Please enter a valid number.")
 
 def choose_resolution():
@@ -29,7 +29,7 @@ def choose_resolution():
                 return resolution_height
             else:
                 print("Invalid choice. Please enter 1, 2, or 3.")
-        except ValueError:
+        except (ValueError,EOFError):
             print("Invalid input. Please enter a number (1, 2, or 3).")
 
 class Main(HiAnimeIE):
@@ -40,7 +40,11 @@ class Main(HiAnimeIE):
             'no_warnings': True,
         }
         self._downloader = YoutubeDL(ydl_opts)  # Initialize the downloader
-        name_of_anime = input("Enter Name of Anime: ")
+        while True:
+            try:
+                name_of_anime = input("Enter Name of Anime: ")
+            except EOFError:
+                print("No input provided.")
         url = "https://hianime.to/search?keyword=" + name_of_anime
         webpage = self._download_webpage(url, None)
         anime_elements=get_elements_html_by_class('flw-item',webpage)
@@ -53,18 +57,18 @@ class Main(HiAnimeIE):
             name_of_anime=(clean_html(get_element_by_class('film-name',element)))
             url_of_anime="https://hianime.to/" + (re.search(r'href="/watch/([^"]+)"', element)).group(1)
             try:
-                sub_episodes_available=(clean_html(get_element_by_class('tick-item tick-sub',element)))
-            except ValueError:
+                sub_episodes_available=int((clean_html(get_element_by_class('tick-item tick-sub',element))))
+            except (ValueError, TypeError):
                 sub_episodes_available = 0
             try:    
-                dub_episodes_available=(clean_html(get_element_by_class('tick-item tick-dub',element)))
-            except ValueError:
+                dub_episodes_available=int((clean_html(get_element_by_class('tick-item tick-dub',element))))
+            except (ValueError, TypeError):
                 dub_episodes_available = 0
             dict_with_anime_elements[i] = {
                 'name': name_of_anime,
                 'url': url_of_anime,
-                'sub_episodes': int(sub_episodes_available),
-                'dub_episodes': int(dub_episodes_available)
+                'sub_episodes': sub_episodes_available,
+                'dub_episodes': dub_episodes_available
             }
         # PRINT ANIME TITLES TO THE CONSOLE
         for i, el in dict_with_anime_elements.items():
@@ -82,7 +86,7 @@ class Main(HiAnimeIE):
                     break
                 else:
                     print("Invalid anime number. Please select a valid anime.")
-            except ValueError:
+            except (ValueError,EOFError):
                 print("Invalid input. Please enter a valid number.")
         # Display chosen anime details
         print("\nYou have chosen " + Fore.LIGHTCYAN_EX + chosen_anime_dict['name'] + Fore.LIGHTWHITE_EX)
